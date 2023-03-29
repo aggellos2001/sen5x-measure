@@ -3,3 +3,4 @@
 /tests/sen5x-test-sw_i2c
 measurements.csv
 .vscode*
+bin/*
