@@ -4,3 +4,4 @@
 measurements.csv
 .vscode*
 bin/*
+*.csv

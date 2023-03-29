@@ -51,7 +51,7 @@ static char filename[100];
 int main(int argc, char** argv) {
 
     if (argc >= 2) {
-        printf("Using file: %s", argv[1]);
+        printf("Using file: %s.csv\n", argv[1]);
         strncpy(filename, argv[1], 95);
     } else {
         printf("Input your measurements file name (without .csv): ");
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     fseek(fp, 0, SEEK_END);
     if (ftell(fp) == 0) {
         // write header
-        printf("writing to file!\n");
+        printf("Creating new file!\n");
         fprintf(fp, "Time,PM1,PM2.5,PM4,PM10,Humidity,Temperature,VOC,NOx\n");
         rewind(fp);
     }
