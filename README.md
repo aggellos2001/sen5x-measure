@@ -21,4 +21,31 @@ Time,PM1,PM2.5,PM4,PM10,Humidity,Temperature,VOC,NOx
 ```
 A downloadable version of the file above can be found in the releases section.
 
+## Compilation
 
+To compile the file run
+```bash
+make
+```
+This will create a new binary called "measure" in the bin/ folder.
+
+## Usage
+
+You can now either give the name of the csv file as an argument or when the program asks for it.
+
+**Do NOT include .csv**
+
+### Arguments:
+
+```bash
+./measure somename
+```
+Will create **somename.csv**.
+
+### User input:
+
+```bash
+./measure
+Input your measurements file name (without .csv): somename
+```
+Will also create **somename.csv**.

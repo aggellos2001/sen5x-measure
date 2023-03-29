@@ -15,8 +15,8 @@ endif
 all: measure
 
 measure: clean
-	$(CC) $(CFLAGS) -o $@  ${sen5x_sources} ${i2c_sources} \
-		${i2c_implementation} ${common_sources} measure.c -O3
+	$(CC) $(CFLAGS) -o bin/$@  ${sen5x_sources} ${i2c_sources} \
+		${i2c_implementation} ${common_sources} measure.c
 
 clean:
-	$(RM) measure
+	$(RM) bin/measure

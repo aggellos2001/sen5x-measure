@@ -41,13 +41,28 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
-#include <stdlib.h>  // fprintf
-#include <time.h>    // time
-#include <unistd.h>  // sleep
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
-static const char filename[100] = "measurements.csv";
+static char filename[100];
 
-int main(void) {
+int main(int argc, char** argv) {
+
+    if (argc >= 2) {
+        printf("Using file: %s", argv[1]);
+        strncpy(filename, argv[1], 95);
+    } else {
+        printf("Input your measurements file name (without .csv): ");
+        scanf("%95s", filename);
+    }
+    if (strlen(filename) > 95) {
+        printf("File name too long");
+        exit(EXIT_FAILURE);
+    }
+    // 95 + 4 (".csv") = 99 + 1 (null terminator) = 100
+    strcat(filename, ".csv");
 
     // open the csv file
     FILE* fp;
