@@ -41,6 +41,7 @@
 #include "sensirion_common.h"
 #include "sensirion_i2c_hal.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -55,6 +56,13 @@ static const int SLEEP_BETWEEN_MEASUREMENT_USEC = 1000000;
 static const int IGNORE_SEC_OF_MEASUREMENTS = 60;
 static const int MEASURE_FOR_SEC = 300;
 static const int SLEEP_UNTIL_NEXT_MEASUREMENT_SEC = 300;
+
+// If we change this to true, fan cleaning will commence 1 time
+// and then it will be set to false again.
+static int CLEAN_FAN = false;
+
+// 0: LOW, 1: MEDIUM, 2: HIGH
+static int RH_T_ACCELERATION = 0;
 
 int main(int argc, char** argv) {
 
@@ -100,6 +108,7 @@ int main(int argc, char** argv) {
     error = sen5x_device_reset();
     if (error) {
         printf("Error executing sen5x_device_reset(): %i\n", error);
+        exit(EXIT_FAILURE);
     }
 
     unsigned char serial_number[32];
@@ -107,6 +116,7 @@ int main(int argc, char** argv) {
     error = sen5x_get_serial_number(serial_number, serial_number_size);
     if (error) {
         printf("Error executing sen5x_get_serial_number(): %i\n", error);
+        exit(EXIT_FAILURE);
     } else {
         printf("Serial number: %s\n", serial_number);
     }
@@ -116,6 +126,7 @@ int main(int argc, char** argv) {
     error = sen5x_get_product_name(product_name, product_name_size);
     if (error) {
         printf("Error executing sen5x_get_product_name(): %i\n", error);
+        exit(EXIT_FAILURE);
     } else {
         printf("Product name: %s\n", product_name);
     }
@@ -132,9 +143,17 @@ int main(int argc, char** argv) {
                               &protocol_minor);
     if (error) {
         printf("Error executing sen5x_get_version(): %i\n", error);
+        exit(EXIT_FAILURE);
     } else {
         printf("Firmware: %u.%u, Hardware: %u.%u\n", firmware_major,
                firmware_minor, hardware_major, hardware_minor);
+    }
+
+    error = sen5x_set_rht_acceleration_mode(RH_T_ACCELERATION);
+    if (error) {
+        printf("Error executing sen5x_set_rht_acceleration_mode(): %i\n",
+               error);
+        exit(EXIT_FAILURE);
     }
 
     float temp_offset = 0.0f;
@@ -142,6 +161,7 @@ int main(int argc, char** argv) {
     if (error) {
         printf("Error executing sen5x_set_temperature_offset_simple(): %i\n",
                error);
+        exit(EXIT_FAILURE);
     } else {
         printf("Temperature Offset set to %.2f °C (SEN54/SEN55 only)\n",
                temp_offset);
@@ -203,6 +223,11 @@ loop:
         // wait 60 seconds before trying again
         sleep(60);
         goto loop;
+    }
+
+    if (CLEAN_FAN) {
+        sen5x_start_fan_cleaning();
+        CLEAN_FAN = false;
     }
 
     for (int c = 0; c < MEASURE_FOR_SEC; c++) {
