@@ -48,6 +48,14 @@
 
 static char filename[100];
 
+// μseconds! 1 second = 1000000 μseconds
+static const int SLEEP_BETWEEN_MEASUREMENT_USEC = 1000000;
+
+// other constants below are in seconds
+static const int IGNORE_SEC_OF_MEASUREMENTS = 60;
+static const int MEASURE_FOR_SEC = 300;
+static const int SLEEP_UNTIL_NEXT_MEASUREMENT_SEC = 300;
+
 int main(int argc, char** argv) {
 
     if (argc >= 2) {
@@ -192,12 +200,14 @@ loop:
 
     if (error) {
         printf("Error executing sen5x_start_measurement(): %i\n", error);
+        // wait 60 seconds before trying again
+        sleep(60);
+        goto loop;
     }
 
-    // 300 = 5 minutes of measurement
-    for (int c = 0; c < 300; c++) {
+    for (int c = 0; c < MEASURE_FOR_SEC; c++) {
         // Read Measurement
-        sensirion_i2c_hal_sleep_usec(1000000);
+        sensirion_i2c_hal_sleep_usec(SLEEP_BETWEEN_MEASUREMENT_USEC);
 
         error = sen5x_read_measured_values(
             &mass_concentration_pm1p0, &mass_concentration_pm2p5,
@@ -207,6 +217,11 @@ loop:
             printf("Error executing sen5x_read_measured_values(): %i\n", error);
             continue;
         }
+
+        if (c < IGNORE_SEC_OF_MEASUREMENTS) {
+            continue;
+        }
+
         if (!isnan(mass_concentration_pm1p0)) {
             mass_concentration_pm1p0_total += mass_concentration_pm1p0;
             mass_concentration_pm1p0_counter++;
@@ -246,6 +261,9 @@ loop:
 
     if (error) {
         printf("Error executing sen5x_stop_measurement(): %i\n", error);
+        // wait 60 seconds before trying again
+        sleep(60);
+        goto loop;
     }
 
     /*
@@ -297,11 +315,9 @@ loop:
     // fixes: double free error
     fp = NULL;
 
-    // sleep for 5 minutes (300 seconds) and then go back to the beginning of
     // the loop
     printf("Sleeping and waiting 5 minutes...\n");
-    sleep(300);  // for testing purposes, we  may use 30 seconds
-
+    sleep(SLEEP_UNTIL_NEXT_MEASUREMENT_SEC);
     goto loop;
 
     return 0;
