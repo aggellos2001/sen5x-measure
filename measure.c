@@ -48,8 +48,10 @@
 
 static char filename[100];
 
-// 300 = 5 minutes of measurement
-static const int SLEEP_BETWEEN_MEASUREMENT_SEC = 1;
+// μseconds! 1 second = 1000000 μseconds
+static const int SLEEP_BETWEEN_MEASUREMENT_USEC = 1000000;
+
+// other constants below are in seconds
 static const int IGNORE_SEC_OF_MEASUREMENTS = 60;
 static const int MEASURE_FOR_SEC = 300;
 static const int SLEEP_UNTIL_NEXT_MEASUREMENT_SEC = 300;
@@ -205,7 +207,7 @@ loop:
 
     for (int c = 0; c < MEASURE_FOR_SEC; c++) {
         // Read Measurement
-        sensirion_i2c_hal_sleep_usec(SLEEP_BETWEEN_MEASUREMENT_SEC);
+        sensirion_i2c_hal_sleep_usec(SLEEP_BETWEEN_MEASUREMENT_USEC);
 
         error = sen5x_read_measured_values(
             &mass_concentration_pm1p0, &mass_concentration_pm2p5,
