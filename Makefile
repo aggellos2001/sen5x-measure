@@ -17,13 +17,17 @@ endif
 
 .PHONY: all clean
 
-all: measure
-
-measure: clean bin
-	$(CC) $(CFLAGS) -o bin/$@ $(sensirion_sources) $(config_sources) -w $(toml_sources) measure.c
+all: bin/measure
+	
+bin/measure: measure.c
+	#$(CC) $(CFLAGS) -o bin/$@ $(sensirion_sources) $(config_sources) -w $(toml_sources) measure.c
+	$(CC) $(CFLAGS) -o $@ $(sensirion_sources) $(config_sources) -w $(toml_sources) measure.c
 
 clean:
 	$(RM) bin/measure
 
 bin: 
 	$(shell mkdir -p $(OBJDIR))
+
+run: 
+	cd bin && ./measure test
