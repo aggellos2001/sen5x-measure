@@ -1,4 +1,6 @@
-# TOML config file https://toml.io/en/v1.0.0
+# TOML config file template 
+# Use your own in the bin folder (readme.md)
+# Standard at: https://toml.io/en/v1.0.0
 [sensor]
 # main = when reading measurements, secondary = when not reading
 # "all"(0) = measurement mode, "gas"(1) = rht/gas-only measurement, "idle"(2) = idle mode
