@@ -138,8 +138,7 @@ int main(int argc, char** argv) {
     if (config.console.verbose) {
         printf("Starting measurement...\n");
         printf("Counter\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
-        printf("[s]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [%]\t [degC]\t "
-               "[-]\t [-]\n");
+        printf("[-]      [μg/m3] [μg/m3] [μg/m3] [μg/m3] [%]     [degC]  [-]     [-]\n");
     }
 
 loop:
@@ -273,7 +272,7 @@ loop:
 
         if (config.console.verbose) {
             printf(
-                "%d\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\n",
+                "%d\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
                 c, mass_concentration_pm1p0, mass_concentration_pm2p5,
                 mass_concentration_pm4p0, mass_concentration_pm10p0,
                 ambient_humidity, ambient_temperature, voc_index, nox_index);
