@@ -136,7 +136,8 @@ int main(int argc, char** argv) {
     }
 
     if (config.console.verbose) {
-        printf("Time\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
+        printf("Starting measurement...\n");
+        printf("Counter\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
         printf("[s]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [%]\t [degC]\t "
                "[-]\t [-]\n");
     }
@@ -149,7 +150,6 @@ loop:
             exit(EXIT_FAILURE);
         }
     }
-    printf("Starting measurement...\n");
     // we use the counter to keep track
     // of how many successful measurements we have
     // to calculate the average later
@@ -272,10 +272,11 @@ loop:
         }
 
         if (config.console.verbose) {
-            printf("%1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f",
-                   mass_concentration_pm1p0, mass_concentration_pm2p5,
-                   mass_concentration_pm4p0, mass_concentration_pm10p0,
-                   ambient_humidity, ambient_temperature, voc_index, nox_index);
+            printf(
+                "%d\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\n",
+                c, mass_concentration_pm1p0, mass_concentration_pm2p5,
+                mass_concentration_pm4p0, mass_concentration_pm10p0,
+                ambient_humidity, ambient_temperature, voc_index, nox_index);
         }
     }
 
@@ -342,7 +343,9 @@ loop:
     fp = NULL;
 
     // the loop
-    printf("Sleeping and waiting 5 minutes...\n");
+    if (config.console.verbose) {
+        printf("Sleeping and waiting 5 minutes...\n");
+    }
     sleep(config.measurement.wait_between_measurements_for);
 
     goto loop;
