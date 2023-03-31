@@ -9,6 +9,8 @@ i2c_implementation ?= libs/*
 
 CFLAGS = -Os -Wall -fstrict-aliasing -Wstrict-aliasing=1 -Wsign-conversion -fPIC -I.
 
+OBJDIR = bin
+
 ifdef CI
     CFLAGS += -Werror
 endif
@@ -17,8 +19,11 @@ endif
 
 all: measure
 
-measure: clean
+measure: clean bin
 	$(CC) $(CFLAGS) -o bin/$@ $(sensirion_sources) $(config_sources) -w $(toml_sources) measure.c
 
 clean:
 	$(RM) bin/measure
+
+bin: 
+	$(shell mkdir -p $(OBJDIR))

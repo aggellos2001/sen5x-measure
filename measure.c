@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <math.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,15 +20,19 @@ Config config;
 
 static char filename[100];
 
-// TODO IMPLEMENET 6.1.4 Read Data-Ready Flag (0x0202)
-// TODO CTRL+C STOP MEASUREMENT CATCH
+void stop_sensor_when_terminating() {
+    sen5x_stop_measurement();
+    printf("Stopping the sensor before terminating...\n");
+    exit(EXIT_SUCCESS);
+};
 
 int main(int argc, char** argv) {
 
+    // handle CTRL+C
+    signal(SIGINT, stop_sensor_when_terminating);
+
     // parse config file
     config = parse_config();
-
-    return 0;
 
     if (argc >= 2) {
         printf("Using file: %s.csv\n", argv[1]);
@@ -130,6 +135,12 @@ int main(int argc, char** argv) {
                temp_offset);
     }
 
+    if (config.console.verbose) {
+        printf("Time\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx");
+        printf("[s]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [%]\t [degC]\t "
+               "[-]\t [-]");
+    }
+
 loop:
     if (fp == NULL) {
         fp = fopen(filename, "a");
@@ -200,9 +211,18 @@ loop:
     }
 
     for (int c = 0; c < measures_for; c++) {
-        // Read Measurement
-        sensirion_i2c_hal_sleep_usec(wait_between_measurements * 1000000);
+        // Sleep between measurements for a given time
+        // or wait until data is ready if configured
+        if (wait_between_measurements > 0) {
+            sensirion_i2c_hal_sleep_usec(wait_between_measurements * 1000000);
+        } else {
+            bool data_ready = false;
+            do {
+                sen5x_read_data_ready(&data_ready);
+            } while (!data_ready);
+        }
 
+        // Read Measurement
         error = sen5x_read_measured_values(
             &mass_concentration_pm1p0, &mass_concentration_pm2p5,
             &mass_concentration_pm4p0, &mass_concentration_pm10p0,
@@ -250,6 +270,10 @@ loop:
             nox_index_total += nox_index;
             nox_index_counter++;
         }
+
+        if (config.console.verbose) {
+            printf("%1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f");
+        }
     }
 
     if (config.sensor.operation_mode.secondary == GAS) {
@@ -266,7 +290,7 @@ loop:
     }
 
     /*
-    At this point, we have collected 2 minutes of data and can calculate the
+    At this point, we have collected X minutes of data and can calculate the
     average values. (we ignore any NaN values)
     */
 
@@ -316,11 +340,8 @@ loop:
 
     // the loop
     printf("Sleeping and waiting 5 minutes...\n");
-
-    // let the sensor know it's now warm "started"
-    sen5x_set_warm_start_parameter(65535);
-
     sleep(config.measurement.wait_between_measurements_for);
+
     goto loop;
 
     return 0;

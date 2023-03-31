@@ -15,6 +15,7 @@ temp-offset = 0.0
 
 [measurement]
 # seconds between each measurement (recommended and default is 1)
+# if 0 use Data-Ready Flag to wait
 wait-between-measurements-for = 1
 # seconds to take measurements for
 take-measurements-for = 300
