@@ -208,7 +208,7 @@ loop:
     }
 
     for (int c = 0; c < measures_for; c++) {
-        if (c % 24 == 0 && c < config.measurement.ignore_first_n_measurements) {
+        if (c % 24 == 0 && config.console.verbose) {
             printf("==========================================================="
                    "===============\n");
             printf(
@@ -236,9 +236,19 @@ loop:
             &mass_concentration_pm1p0, &mass_concentration_pm2p5,
             &mass_concentration_pm4p0, &mass_concentration_pm10p0,
             &ambient_humidity, &ambient_temperature, &voc_index, &nox_index);
+
         if (error) {
             printf("Error executing sen5x_read_measured_values(): %i\n", error);
             continue;
+        }
+
+        if (config.console.verbose) {
+            printf(
+                "%d\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
+                c, mass_concentration_pm1p0, mass_concentration_pm2p5,
+                mass_concentration_pm4p0, mass_concentration_pm10p0,
+                ambient_humidity, ambient_temperature, voc_index, nox_index);
+            fflush(stdout);
         }
 
         if (c < config.measurement.ignore_first_n_measurements) {
@@ -278,15 +288,6 @@ loop:
         if (!isnan(nox_index) && nox_index > 0) {
             nox_index_total += nox_index;
             nox_index_counter++;
-        }
-
-        if (config.console.verbose) {
-            printf(
-                "%d\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
-                c, mass_concentration_pm1p0, mass_concentration_pm2p5,
-                mass_concentration_pm4p0, mass_concentration_pm10p0,
-                ambient_humidity, ambient_temperature, voc_index, nox_index);
-            fflush(stdout);
         }
     }
 
