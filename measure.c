@@ -136,9 +136,9 @@ int main(int argc, char** argv) {
     }
 
     if (config.console.verbose) {
-        printf("Time\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx");
+        printf("Time\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
         printf("[s]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [μg/m3]\t [%]\t [degC]\t "
-               "[-]\t [-]");
+               "[-]\t [-]\n");
     }
 
 loop:
@@ -272,7 +272,10 @@ loop:
         }
 
         if (config.console.verbose) {
-            printf("%1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f");
+            printf("%1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f\t %1.f",
+                   mass_concentration_pm1p0, mass_concentration_pm2p5,
+                   mass_concentration_pm4p0, mass_concentration_pm10p0,
+                   ambient_humidity, ambient_temperature, voc_index, nox_index);
         }
     }
 
