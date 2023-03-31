@@ -277,6 +277,7 @@ loop:
                 c, mass_concentration_pm1p0, mass_concentration_pm2p5,
                 mass_concentration_pm4p0, mass_concentration_pm10p0,
                 ambient_humidity, ambient_temperature, voc_index, nox_index);
+            fflush(stdout);
         }
     }
 
