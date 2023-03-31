@@ -30,4 +30,4 @@ bin:
 	$(shell mkdir -p $(OBJDIR))
 
 run: 
-	cd bin && ./measure test
+	cd bin && ./measure
