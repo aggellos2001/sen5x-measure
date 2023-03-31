@@ -208,13 +208,17 @@ loop:
     }
 
     for (int c = 0; c < measures_for; c++) {
-	if (c%24==0 && c < config.measurement.ignore_first_n_measurements) {
-    		printf("==========================================================================\n");
-       		printf("Counter\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
-       		printf("[-]      [μg/m3] [μg/m3] [μg/m3] [μg/m3] [%]     [degC]  [-]   "
-       	        "  [-]\n");
-    		printf("==========================================================================\n");
-    	}
+        if (c % 24 == 0 && c < config.measurement.ignore_first_n_measurements) {
+            printf("==========================================================="
+                   "===============\n");
+            printf(
+                "Counter\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
+            printf("[-]      [μg/m3] [μg/m3] [μg/m3] [μg/m3] [%]     [degC]  "
+                   "[-]   "
+                   "  [-]\n");
+            printf("==========================================================="
+                   "===============\n");
+        }
 
         // Sleep between measurements for a given time
         // or wait until data is ready if configured
@@ -324,13 +328,15 @@ loop:
     voc_index_total /= voc_index_counter != 0 ? voc_index_counter : 1;
     nox_index_total /= nox_index_counter != 0 ? nox_index_counter : 1;
 
-    printf("============================= AVERAGE VALUES =============================\n");
+    printf("============================= AVERAGE VALUES "
+           "=============================\n");
     // print the average values one line concisely
     printf("%.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
            mass_concentration_pm1p0, mass_concentration_pm2p5,
            mass_concentration_pm4p0, mass_concentration_pm10p0,
            ambient_humidity, ambient_temperature, voc_index, nox_index);
-    printf("==========================================================================\n");
+    printf("==================================================================="
+           "=======\n");
     // print the average values to the csv file + timestamp
     // fprintf(fp, "%.2f,%2.f,%2.f,%2.f,%2.f,%2.f,%2.f,%2.f");
     struct timespec ts;
@@ -349,7 +355,7 @@ loop:
 
     // the loop
     if (config.console.verbose) {
-        printf("Sleeping and waiting %d seconds...\n",
+        printf("Sleeping for %d seconds...\n",
                config.measurement.sleep_until_next_batch_of_measurements_for);
     }
     sleep(config.measurement.sleep_until_next_batch_of_measurements_for);
