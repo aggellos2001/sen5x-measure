@@ -1,70 +1,38 @@
-/*
- * I2C-Generator: 0.3.0
- * Yaml Version: 2.1.3
- * Template Version: 0.7.0-109-gb259776
- */
-/*
- * Copyright (c) 2021, Sensirion AG
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
- * * Neither the name of Sensirion AG nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
-
-#include <math.h>   // NAN
-#include <stdio.h>  // printf
-
-#include "sen5x_i2c.h"
-#include "sensirion_common.h"
-#include "sensirion_i2c_hal.h"
-
+#include <errno.h>
+#include <math.h>
+#include <signal.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "libs/sen5x_i2c.h"
+#include "libs/sensirion_common.h"
+#include "libs/sensirion_i2c_hal.h"
+
+// ===CONFIG FROM TOML FILE DO NOT CHANGE DIRECTLY ===
+#include "libs/config.h"
+#include "libs/toml.h"
+Config config;
+// ================
+
 static char filename[100];
 
-// μseconds! 1 second = 1000000 μseconds
-static const int SLEEP_BETWEEN_MEASUREMENT_USEC = 1000000;
-
-// other constants below are in seconds
-static const int IGNORE_SEC_OF_MEASUREMENTS = 60;
-static const int MEASURE_FOR_SEC = 300;
-static const int SLEEP_UNTIL_NEXT_MEASUREMENT_SEC = 300;
-
-// If we change this to true, fan cleaning will commence 1 time
-// and then it will be set to false again.
-static int CLEAN_FAN = false;
-
-// 0: LOW, 1: MEDIUM, 2: HIGH
-static int RH_T_ACCELERATION = 0;
+void stop_sensor_when_terminating() {
+    sen5x_stop_measurement();
+    printf("Stopping the sensor before terminating...\n");
+    exit(EXIT_SUCCESS);
+};
 
 int main(int argc, char** argv) {
+
+    // handle CTRL+C
+    signal(SIGINT, stop_sensor_when_terminating);
+
+    // parse config file
+    config = parse_config();
 
     if (argc >= 2) {
         printf("Using file: %s.csv\n", argv[1]);
@@ -149,7 +117,7 @@ int main(int argc, char** argv) {
                firmware_minor, hardware_major, hardware_minor);
     }
 
-    error = sen5x_set_rht_acceleration_mode(RH_T_ACCELERATION);
+    error = sen5x_set_rht_acceleration_mode(config.sensor.rth_mode);
     if (error) {
         printf("Error executing sen5x_set_rht_acceleration_mode(): %i\n",
                error);
@@ -167,6 +135,10 @@ int main(int argc, char** argv) {
                temp_offset);
     }
 
+    if (config.console.verbose) {
+        printf("Starting measurement...\n");
+    }
+
 loop:
     if (fp == NULL) {
         fp = fopen(filename, "a");
@@ -175,7 +147,6 @@ loop:
             exit(EXIT_FAILURE);
         }
     }
-    printf("Starting measurement...\n");
     // we use the counter to keep track
     // of how many successful measurements we have
     // to calculate the average later
@@ -189,7 +160,7 @@ loop:
 
     float mass_concentration_pm4p0 = 0.0;
     float mass_concentration_pm4p0_total = 0.0;
-    int32_t mass_concentration_pm4p0_counter = 0.0;
+    int32_t mass_concentration_pm4p0_counter = 0;
 
     float mass_concentration_pm10p0 = 0.0;
     float mass_concentration_pm10p0_total = 0.0;
@@ -209,14 +180,20 @@ loop:
 
     float nox_index = 0.0;
     float nox_index_total = 0.0;
-    int32_t nox_index_counter = 0.0;
+    int32_t nox_index_counter = 0;
 
-    /* each loop has sleep time of 1 second + some processing time
-    This loop will run for 2 minutes approximately
-    */
+    int measures_for = config.measurement.take_measurements_for;
+    int wait_between_measurements =
+        config.measurement.wait_between_measurements_for;
 
-    // Start Measurement
-    error = sen5x_start_measurement();
+    if (config.sensor.operation_mode.main == ALL) {
+        // start Measurement with all sensors
+        error = sen5x_start_measurement();
+    } else {
+        // start Measurement without PM sensors
+        // only RHT and VOC/NOx
+        error = sen5x_start_measurement_without_pm();
+    }
 
     if (error) {
         printf("Error executing sen5x_start_measurement(): %i\n", error);
@@ -225,25 +202,56 @@ loop:
         goto loop;
     }
 
-    if (CLEAN_FAN) {
+    if (config.sensor.clean_fan) {
         sen5x_start_fan_cleaning();
-        CLEAN_FAN = false;
+        config.sensor.clean_fan = false;
     }
 
-    for (int c = 0; c < MEASURE_FOR_SEC; c++) {
-        // Read Measurement
-        sensirion_i2c_hal_sleep_usec(SLEEP_BETWEEN_MEASUREMENT_USEC);
+    for (int c = 0; c < measures_for; c++) {
+        if (c % 24 == 0 && config.console.verbose) {
+            printf("==========================================================="
+                   "===============\n");
+            printf(
+                "Counter\t PM1\t PM2.5\t PM4\t PM10\t RH\t Temp\t VOC\t NOx\n");
+            printf("[-]      [μg/m3] [μg/m3] [μg/m3] [μg/m3] [%]     [degC]  "
+                   "[-]   "
+                   "  [-]\n");
+            printf("==========================================================="
+                   "===============\n");
+        }
 
+        // Sleep between measurements for a given time
+        // or wait until data is ready if configured
+        if (wait_between_measurements > 0) {
+            sensirion_i2c_hal_sleep_usec(wait_between_measurements * 1000000);
+        } else {
+            bool data_ready = false;
+            do {
+                sen5x_read_data_ready(&data_ready);
+            } while (!data_ready);
+        }
+
+        // Read Measurement
         error = sen5x_read_measured_values(
             &mass_concentration_pm1p0, &mass_concentration_pm2p5,
             &mass_concentration_pm4p0, &mass_concentration_pm10p0,
             &ambient_humidity, &ambient_temperature, &voc_index, &nox_index);
+
         if (error) {
             printf("Error executing sen5x_read_measured_values(): %i\n", error);
             continue;
         }
 
-        if (c < IGNORE_SEC_OF_MEASUREMENTS) {
+        if (config.console.verbose) {
+            printf(
+                "%d\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
+                c, mass_concentration_pm1p0, mass_concentration_pm2p5,
+                mass_concentration_pm4p0, mass_concentration_pm10p0,
+                ambient_humidity, ambient_temperature, voc_index, nox_index);
+            fflush(stdout);
+        }
+
+        if (c < config.measurement.ignore_first_n_measurements) {
             continue;
         }
 
@@ -282,7 +290,12 @@ loop:
             nox_index_counter++;
         }
     }
-    error = sen5x_stop_measurement();
+
+    if (config.sensor.operation_mode.secondary == GAS) {
+        error = sen5x_start_measurement_without_pm();
+    } else if (config.sensor.operation_mode.secondary == IDLE) {
+        error = sen5x_stop_measurement();
+    }
 
     if (error) {
         printf("Error executing sen5x_stop_measurement(): %i\n", error);
@@ -292,7 +305,7 @@ loop:
     }
 
     /*
-    At this point, we have collected 2 minutes of data and can calculate the
+    At this point, we have collected X minutes of data and can calculate the
     average values. (we ignore any NaN values)
     */
 
@@ -316,14 +329,15 @@ loop:
     voc_index_total /= voc_index_counter != 0 ? voc_index_counter : 1;
     nox_index_total /= nox_index_counter != 0 ? nox_index_counter : 1;
 
+    printf("============================= AVERAGE VALUES "
+           "=============================\n");
     // print the average values one line concisely
-    printf("PM1.0: %.1f μg/m3, PM2.5: %.1f μg/m3, PM4.0: %.1f μg/m3, PM10.0: "
-           "%.1f μg/m3, Humidity: %.1f %%RH, Temperature: %.1f °C, VOC: %.1f, "
-           "NOx: %.1f\n",
+    printf("%.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\n",
            mass_concentration_pm1p0, mass_concentration_pm2p5,
            mass_concentration_pm4p0, mass_concentration_pm10p0,
            ambient_humidity, ambient_temperature, voc_index, nox_index);
-
+    printf("==================================================================="
+           "=======\n");
     // print the average values to the csv file + timestamp
     // fprintf(fp, "%.2f,%2.f,%2.f,%2.f,%2.f,%2.f,%2.f,%2.f");
     struct timespec ts;
@@ -341,8 +355,12 @@ loop:
     fp = NULL;
 
     // the loop
-    printf("Sleeping and waiting 5 minutes...\n");
-    sleep(SLEEP_UNTIL_NEXT_MEASUREMENT_SEC);
+    if (config.console.verbose) {
+        printf("Sleeping for %d seconds...\n",
+               config.measurement.sleep_until_next_batch_of_measurements_for);
+    }
+    sleep(config.measurement.sleep_until_next_batch_of_measurements_for);
+
     goto loop;
 
     return 0;

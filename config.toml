@@ -1,0 +1,30 @@
+# TOML config file template 
+# Use your own in the bin folder (readme.md)
+# Standard at: https://toml.io/en/v1.0.0
+[sensor]
+# main = when reading measurements, secondary = when not reading
+# "all"(0) = measurement mode, "gas"(1) = rht/gas-only measurement, "idle"(2) = idle mode
+# main = all/gas, secondary = gas/idle
+operation-mode = { main = "all", secondary = "idle" }
+# if true it will attempt to clean the fan 
+# but main mode must be "all"
+clean-fan = false
+# 0 = low, 1 = medium, 2 = high
+rht-accel-mode = 0
+# this is a float
+temp-offset = 0.0
+
+
+[measurement]
+# seconds between each measurement (recommended and default is 1)
+# if 0 use Data-Ready Flag to wait
+wait-between-measurements-for = 1
+# seconds to take measurements for
+take-measurements-for = 300
+# seconds to sleep until we take the next measurements
+sleep-until-next-batch-of-measurements-for = 300
+# ignore first n measurements 
+ignore-first-n-measurements = 60
+
+[console]
+verbose = false
