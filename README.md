@@ -61,7 +61,7 @@ Input your measurements file name (without .csv): somename
 Will also create **somename.csv**.
 
 
-### Graph generation
+## Graph generation
 
 Για την δημιουργία διαγραμμάτων μπορεί να χρησιμοποιηθεί το script `make_diagram.py`.
 
