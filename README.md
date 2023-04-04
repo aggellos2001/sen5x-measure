@@ -59,3 +59,22 @@ cd bin/
 Input your measurements file name (without .csv): somename
 ```
 Will also create **somename.csv**.
+
+
+### Graph generation
+
+Για την δημιουργία διαγραμμάτων μπορεί να χρησιμοποιηθεί το script `make_diagram.py`.
+
+Μπορεί να τρέξει με την εντολή:
+
+```bash
+python script.py
+```
+το οποίο θα ζητήσει το όνομα του αρχείου CSV που περιέχει τις μετρήσεις πχ `test.csv`.
+
+Επίσης μπορεί να τρέξει χρησιμοποιώντας τα file arguments:
+
+```bash
+python script.py -f /path/to/your/csv/test.csv
+```
+ώστε να τρέχει όπου και αν βρίσκεται το αρχείο.
