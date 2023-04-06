@@ -11,6 +11,7 @@ def select_columns(data):
     selected_columns = input(
         "Enter the column numbers you want to display, separated by commas (e.g., 1,2,3) or type 'all' to select all columns: ")
 
+    # if user types "all" or "All", return the entire data frame
     if selected_columns.strip().lower() == 'all':
         return data
     else:
