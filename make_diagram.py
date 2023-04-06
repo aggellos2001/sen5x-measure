@@ -2,8 +2,6 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
-import matplotlib.dates as mdates
-
 
 def select_columns(data):
     print("Available columns:")
@@ -11,11 +9,14 @@ def select_columns(data):
         print(f"{index}. {column}")
 
     selected_columns = input(
-        "Enter the column numbers you want to display, separated by commas (e.g., 1,2,3): ")
-    selected_indices = [
-        int(x) - 1 for x in selected_columns.split(',')]  # Adjust indices
-    return data.iloc[:, selected_indices]
+        "Enter the column numbers you want to display, separated by commas (e.g., 1,2,3) or type 'all' to select all columns: ")
 
+    if selected_columns.strip().lower() == 'all':
+        return data
+    else:
+        selected_indices = [
+            int(x) - 1 for x in selected_columns.split(',')]  # Adjust indices
+        return data.iloc[:, selected_indices]
 
 if __name__ == "__main__":
 
@@ -60,15 +61,6 @@ if __name__ == "__main__":
     else:
         plt.title(f'CSV Data Visualization for {start_date} - {end_date}')
 
-    # Customize x-axis ticks and labels
-    ax.xaxis.set_major_locator(mdates.HourLocator(
-        interval=1))  # Set major ticks every hour
-    ax.xaxis.set_minor_locator(mdates.MinuteLocator(
-        interval=30))  # Set minor ticks every 30 minutes
-    ax.xaxis.set_major_formatter(mdates.DateFormatter(
-        '%#d/%#m %H:%M'))  # Format major ticks for Windows
-
-    plt.xticks(rotation=45)
     plt.grid(True)
 
     # Set the legend position to the best location based on the plotted data
