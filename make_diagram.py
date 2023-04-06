@@ -3,11 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 
-import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
-import datetime
-
 def select_columns(data):
     print("Available columns:")
     for index, column in enumerate(data.columns, start=1):
