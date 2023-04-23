@@ -17,7 +17,7 @@ endif
 
 .PHONY: all clean
 
-all: bin/measure
+all: bin bin/measure
 	
 bin/measure: measure.c
 	#$(CC) $(CFLAGS) -o bin/$@ $(sensirion_sources) $(config_sources) -w $(toml_sources) measure.c
