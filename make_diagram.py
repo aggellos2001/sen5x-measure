@@ -2,6 +2,14 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
+# import numpy as np
+
+
+def get_date_range():
+    start_date = input("Enter the start date (YYYY-MM-DD): ")
+    end_date = input("Enter the end date (YYYY-MM-DD): ")
+    return pd.to_datetime(start_date), pd.to_datetime(end_date)
+
 
 def select_columns(data):
     print("Available columns:")
@@ -18,6 +26,7 @@ def select_columns(data):
         selected_indices = [
             int(x) - 1 for x in selected_columns.split(',')]  # Adjust indices
         return data.iloc[:, selected_indices]
+
 
 if __name__ == "__main__":
 
@@ -43,11 +52,20 @@ if __name__ == "__main__":
 
     # 4. Set the date as index
     data.set_index('Time', inplace=True)
+    data.sort_index(inplace=True)
+    # Missing dates with no data will be filled with 0
+    # by resampling the data with a 15 minute frequency
+    sampling_frequency = '15T'
+    data = data.resample(sampling_frequency).mean().fillna(0)
 
-    # 6. Select columns to display
+    # 5. Select columns to display
     data = select_columns(data)
 
-    # 5. Create a diagram using the first column (date) as the x axis and selected columns on the y axis
+    # Get the date range from the user
+    start_date, end_date = get_date_range()
+    data = data.truncate(before=start_date, after=end_date)
+
+    # 6. Create a diagram using the first column (date) as the x axis and selected columns on the y axis
     fig, ax = plt.subplots(figsize=(10, 5))
     data.plot(ax=ax)
     plt.xlabel('Time')
